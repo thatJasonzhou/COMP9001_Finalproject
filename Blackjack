@@ -1,0 +1,121 @@
+import random
+
+suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'] 
+ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'] 
+values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,
+          '8': 8, '9': 9, '10': 10, 'J': 10, 'Q': 10, 'K': 10, 'A': 11}
+
+#shuffle the cards
+def create_deck():
+    deck = []
+    for suit in suits:             
+        for rank in ranks:         
+            card = (rank, suit)  
+            deck.append(card)      
+    random.shuffle(deck)
+    return deck
+
+def calculate_score(hand):
+    score = 0
+    aces = 0  
+    for card in hand:
+        rank = card[0]
+        score += values[rank]
+        if rank == 'A':
+            aces += 1
+# If score >21 and there has an ace, treat the ace as 1 (total score subtract 10 from 11)
+    while score > 21 and aces:
+        score -= 10
+        aces -= 1
+    return score
+
+def display_hand(name, hand, hide_first_card=False):
+    if hide_first_card:
+        print(f"{name}'s hand: [UNKNOWN, {hand[1][0]} of {hand[1][1]}]")
+    else:
+        print(f"{name}'s hand:")
+        for rank, suit in hand:
+            print(f"----{rank} of {suit}")
+        print(f"----Total: {calculate_score(hand)}")
+
+def player_turn(deck, hand):
+    while True:
+        display_hand("Player", hand)
+        move = input("Do you want to Hit or Stand? ").lower()
+        if move == 'hit':
+            hand.append(deck.pop())
+            score = calculate_score(hand)
+            if score > 21:
+                print("You busted!")
+                break
+        elif move == 'stand':
+            break
+        else:
+            print("Make your choice! Hit or Stand?")
+    return hand
+
+def dealer_turn(deck, hand):
+    while calculate_score(hand) < 17:
+        hand.append(deck.pop())
+    return hand
+
+def determine_winner(player_hand, dealer_hand, bet, balance):
+    player_score = calculate_score(player_hand)
+    dealer_score = calculate_score(dealer_hand)
+
+    print(f"Final Results:")
+    display_hand("Player", player_hand)
+    display_hand("Dealer", dealer_hand)
+
+    if player_score > 21:
+        print("You Lose! Dealer Wins!")
+        return balance - bet
+    elif dealer_score > 21 or player_score > dealer_score:
+        print("You Win!")
+        return balance + bet
+    elif player_score == dealer_score:
+        print("Draw!")
+        return balance
+    else:
+        print("Dealer Win!")
+        return balance - bet
+
+#main
+def play_blackjack():
+    balance = 100
+    print("Welcome to Jason's pub, and you're playing Blackjack!")
+    while balance > 0:
+        print(f"Your balance: ${balance}")
+        try:
+            bet = int(input("Enter your bet amount: $"))
+            if bet <= 0 or bet > balance:
+                print("What are you doing?")
+                continue
+        except ValueError:
+            print("Enter a valid number!")
+            continue
+
+        deck = create_deck() 
+        player_hand = [deck.pop(), deck.pop()]
+        dealer_hand = [deck.pop(), deck.pop()]
+
+        display_hand("Dealer", dealer_hand, hide_first_card=True)
+        player_hand = player_turn(deck, player_hand)
+
+        if calculate_score(player_hand) <= 21:
+            print("Dealer's turn")
+            dealer_hand = dealer_turn(deck, dealer_hand)
+
+        balance = determine_winner(player_hand, dealer_hand, bet, balance)
+
+        if balance <= 0:
+            print("You're out of money! Get out of here!")
+            break
+
+        again = input("Play another round? Yes or No: ").lower()
+        if again != 'yes':
+            print("Thanks for playing!")
+            break
+
+if __name__ == "__main__":
+    play_blackjack()
